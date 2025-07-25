@@ -85,61 +85,6 @@ template<typename T> struct seg {
 };
 \end{minted}
 \newpage
-\begin{minted}{cpp}
-// tkfkddl59323 
-#include <bits/stdc++.h>
-#define ll long long int
-using namespace std;
-template<typename T>
-struct Segtree {
-	int S;
-	vector<T> seg;
-	T(*oper)(T, T);
-	T e;
- 
-	Segtree(const vector<T>& arr, T _e = 0, T(*_oper)(T, T) = [](T a, T b) {return a + b; }) {
-		int _n = arr.size();
-		S = bit_ceil((unsigned int)_n);
-		seg = vector<T>(2 * S, _e);
-		oper = _oper;
-		e = _e;
-
-		for (int i = 0; i < _n; i++)
-			seg[S + i] = arr[i];
-
-		for (int SS = S / 2; SS > 0; SS /= 2)
-			for (int i = SS; i < 2 * SS; i++)
-				seg[i] = oper(seg[2 * i], seg[2 * i + 1]);
-	}
-
-	void update(int idx, T val) {
-		idx += S;
-		seg[idx] = val;
-		for (idx >>= 1; idx > 0; idx >>= 1)
-			seg[idx] = oper(seg[idx * 2], seg[idx * 2 + 1]);
-	}
-
-	T query(int l, int r) {
-		T lret = e, rret = e;
-		for (l += S, r += S; l <= r; l >>= 1, r >>= 1) {
-			if (l & 1) lret = oper(lret, seg[l++]);
-			if (r & 1 ^ 1) rret = oper(seg[r--], rret);
-		}
-		return oper(lret, rret);
-	}
-
-	// 이 아래는 bsquery가 필요할 때만 베껴쓸 것
-	int BSquery(int val){
-		int idx = 1;
-		while(idx < S){
-			idx *= 2;
-			if(seg[idx] < val) val -= seg[idx++];
-		}
-		return idx-S;
-	}
-};
-\end{minted}
-\newpage
 \subsubsection {Lazy Propagation}
 \begin{minted}{cpp}
 class lazy_seg{
@@ -574,6 +519,86 @@ sort(p.begin(), p.end(), [&](const pt &p,const pt &q){
     return abs(p.x)<abs(q.x) || abs(p.y)<abs(q.y);  //같은 직선이라면 가까운 게 먼저
 });
 \end{minted}
+
+\subsection{half plane intersection}
+\begin{minted}{cpp}
+// 1. 도형의 각 변을 임의의 거리 r만큼 내부로 이동했을 때 만들어지는 영역
+// 2. 모서리와 교차하지 않고 도형 내부의 모든 점까지 그을 수 있는 영역
+
+typedef long double ld;
+const double eps = 1e-10, inf = 1e9;
+struct pd{
+    ld x, y;
+    pd operator +(pd t){return {x + t.x, y + t.y};}
+    pd operator -(pd t){return {x - t.x, y - t.y};}
+    ld operator *(pd t){return x * t.x + y * t.y;}
+    ld operator /(pd t){return x * t.y - y *t.x;}
+    ld sz() {return sqrt(x * x + y * y);}
+};
+
+struct line{
+    pd p, d;
+    ld a;
+    
+    line() {}
+    //두 점을 지나는 직선
+    line(pd p,pd q) : p(p), d(q - p){
+        a = atan2l(d.y, d.x);
+    }
+    // half plane 
+    // 점이 반평면 밖에 있는 지 확인 (-eps : 교집합으로 점도 가능, eps : 교집합으로 점 불가능)
+    bool out(pd t){return d / (t - p) < eps;}
+    // 각도 순으로 정렬
+    bool operator < (line t){return a < t.a;}
+};
+
+// 두 직선의 교점 구하기 (평행x)
+pd interPoint(line a, line b){
+    ld t = ((b.p - a.p) / b.d) / (a.d / b.d);
+    a.p.x += t * a.d.x;
+    a.p.y += t * a.d.y;
+    return a.p;
+}
+
+// 반평면 교집합 구하기 O(NlogN)
+vector<pd> half_plane(vector<line> v){
+    // unbounded case 일 경우 boundary를 만들어주기
+    /* 
+    pd box[4] = {
+        pd{inf, inf},
+        pd{-inf, inf},
+        pd{-inf, -inf},
+        pd{inf, -inf},
+    };
+    for(int i = 0; i < 4; i++) v.push_back(line(box[i], box[(i + 1) % 4]));
+    */
+
+    vector<pd> ret;
+    deque<line> dq;
+    sort(all(v));
+    for(auto&l : v){
+        while(dq.size() > 1 && l.out(interPoint(dq[dq.size() - 2], dq.back()))) dq.pop_back();
+        while(dq.size() > 1 && l.out(interPoint(dq[0], dq[1]))) dq.pop_front();
+
+        // 평행한 두 직선 예외 처리하기
+        if(dq.size() && fabsl(dq.back().d / l.d) < eps){
+            if(dq.back().d * l.d < 0.0) return ret;
+            
+            if(l.out(dq.back().p)) dq.pop_back();
+            else continue;
+        }
+        dq.emplace_back(l);
+    }
+
+    while(dq.size() > 2 && dq[0].out(interPoint(dq[dq.size() - 2], dq.back()))) dq.pop_back();
+    while(dq.size() > 2 && dq.back().out(interPoint(dq[0], dq[1]))) dq.pop_front();
+    if(dq.size() < 3) return ret;
+    for(int i = 0, n = dq.size(); i < n; i++)
+        ret.emplace_back(interPoint(dq[i], dq[(i + 1) % n]));
+    return ret;
+}
+\end{minted}
+
 \section{Graph}
 \subsection {centroid}
 \begin{minted}{cpp}
@@ -625,6 +650,160 @@ int query(int u) {
 \end{minted}
 \newpage
 
+\subsection{Planer Graph}
+\begin{minted}{cpp}
+/*
+- 평면그래프 <=> K5 K3,3 이 없음
+
+- 오일러 공식 
+ v - e + f = 2
+
+- 평면 그래프 (v>=3) 의 특징 (충분조건은 X)
+1. e <= 3v - 6
+2. 이분 그래프 -> e <= 2v - 4
+3. f <= 2v - 4
+
+- degree<= 5인 점이 적어도 하나 존재
+if 모든 점이 degree>=6이라고 가정하면 e >= 3v여야하는데 1번 조건인 e <= 3v-6과 모순
+
+- 모든 정점의 degree >=3이면 길이 5 이하의 사이클이 존재
+모든 사이클의 길이가 6 이상이라고 하면
+2e >= 6f 이므로 e >= 3f = 3(e - v + 2) 즉, 2e <= 3v - 6
+모든 정점의 degree가 >= 3이면 2e >= 3이여야 하는데 모순
+
+- 사이클 찾는법 : 매번 degree가 가장 작은 점을 뽑고 지워감
+  min(degree) <= 5임이 보장됨.
+  연결된 간선을 out edge로 고정해줌
+  bfs를 통해 길이 3, 4 사이클 찾기 P(5^3*N + 5*2*NlogN)
+*/
+\end{minted}
+
+\subsection {Centroid Tree}
+\begin{minted}{cpp}
+// level of tree : O(log(N))
+
+int n, m, op, u, v, color[NMAX];
+int W[NMAX], vis[NMAX];
+// in Centroid tree
+vector<pair<int, int>> Up[NMAX];  // <anc, dist>
+multiset<int> S[NMAX];  // for subtree of vertex x
+
+int DFS(int x, int p) {
+    W[x] = 1;
+    for (int &nx : adj[x])
+        if (nx != p && !vis[nx]) W[x] += DFS(nx, x);
+    return W[x];
+}
+
+// find centroid
+int Cent(int x, int p, int k) {
+    for (int& nx : adj[x])
+        if (nx != p && !vis[nx] && W[nx] > k) return Cent(nx, x, k);
+    return x;
+}
+
+// Centroid Tree에서 ct의 서브트리 값 갱신
+void DFS2(int x, int p, int d, int ct) {
+    Up[x].emplace_back(ct, d);
+    for (int& nx : adj[x])
+        if (nx != p && !vis[nx]) DFS2(nx, x, d + 1, ct);
+    return;
+}
+
+// Centroid Tree 만들기
+void make_tree(int x) {
+    int k = DFS(x, -1) / 2;
+    int ct = Cent(x, -1, k);    // ct : 현재 centroid 정점
+    DFS2(ct, -1, 0, ct);    // ct의 서브트리 update
+    vis[ct] = 1;
+    for (int& nx : adj[ct])
+        if (!vis[nx]) make_tree(nx);
+    return;
+}
+\end{minted}
+\newpage
+
+\subsection {Directed MST}
+\begin{minted}{cpp}
+// Chu–Liu Edmonds' algorithm 
+// Directed MST (ElogE)
+typedef long long ll;
+const int NMAX = 2e5 + 5;
+struct edge{
+    int u, v;
+    ll c;
+    bool operator <(const edge& t) const{return c > t.c;}
+};
+int U[NMAX * 2], P[NMAX * 2], par[NMAX * 2];
+int find(int x){return par[x] == -1 ? x : par[x] = find(par[x]);}
+ll sum[NMAX * 2];
+
+// 0-based, 각 정점의 부모를 배열로 반환
+// 모든 정점이 루트에서 도달가능한 경우
+vector<int> DMST(int n, int r, const vector<edge> & E){
+    memset(U, -1, sizeof(U));
+    memset(P, -1, sizeof(P));
+    memset(par, -1, sizeof(par));
+    edge par_edge[2 * n];
+    vector<int> grp[2 * n];
+
+    priority_queue<edge> Q[2 * n];
+    for(auto& e : E) Q[e.v].emplace(e);
+    for(int i = 0; i < n; i++) Q[(i + 1) % n].push({i, (i + 1) % n, (ll)1e18});
+    
+    int cur = 0, t = n;
+    while(Q[cur].size()){
+        auto e = Q[cur].top(); e.c += sum[cur];
+        Q[cur].pop();
+        int bef = find(e.u);
+        if(cur == bef) continue;
+        U[cur] = bef;
+        par_edge[cur] = e;
+
+        if(U[bef] == -1) cur = bef;
+        else{
+            // make new node t
+            int x = bef;
+            do{
+                sum[x] -= par_edge[x].c;
+                // merge edges with small to large
+                if(Q[x].size() > Q[t].size()) swap(Q[x], Q[t]), swap(sum[x], sum[t]);
+                while(Q[x].size()){
+                    auto tmp = Q[x].top(); tmp.c += sum[x];
+                    Q[x].pop();
+                    tmp.c -= sum[t];
+                    Q[t].emplace(tmp);
+                }
+                grp[t].emplace_back(x);
+                x = find(U[x]);
+            } while(x != bef);
+            for(auto x : grp[t]) par[x] = t, P[x] = t;
+            cur = t++;
+        }
+    }
+
+    vector<int> res(n, -1);
+    queue<int> q; q.emplace(r);
+    while(q.size()){
+        int x = q.front(); q.pop();
+        while(P[x] != -1){
+            for(auto&y : grp[P[x]]){
+                if(y == x) continue;
+                if(par_edge[y].v < n)
+                    res[par_edge[y].v] = par_edge[y].u;
+                // v를 루트로하는 서브트리에서 다시 탐색
+                q.emplace(par_edge[y].v);
+                P[y] = -1;
+            }
+            x = P[x];
+        }
+    }
+    res[r] = r;
+    return res;
+}
+\end{minted}
+\newpage
+
 \subsection {Eulerian Circuit}
 \begin{minted}{cpp}
 vector<P>v[n_];
@@ -668,102 +847,73 @@ void solve(){
 
 \subsection {Offline Dynamic Connectivity}
 \begin{minted}{cpp}
- * 1. 정점 u, v를 잇는 간선 추가 * 2. 정점 u, v를 잇는 간선 제거 (이미 있다고 치자.) * 3. 그래프 상에서 두 정점이 연결되어 있는지 체크
-일단, 체크하는 쿼리에 순서대로 1, 2, 3 ... 등의 시간을 붙여놓고, 각각의 간선에 대해서 "lifetime"을 계산해 놓는다. 3번째 체크 쿼리가 들어오고, 2 - 3을 잇는 간선이 추가되고, 6번째 체크 쿼리가 들어오고, 2 - 3을 잇는 간선이 제거된다면. 2 - 3 간선의 lifetime은 [4, 6]의 구간이라고 해석되는 것이다.이렇게 각각의 간선에 대해서 lifetime을 계산해두었을 때, 분할정복을 사용해서 문제를 해결할 수 있다. 체크 쿼리가 총 Q개라고 했을 때, Solve(1, Q, [lifetime이 계산된 간선 집합]) 을 호출하자. Solve(S, E, edge set) :  * 1. edge i의 lifetime을 [is, ie]라고 했을 때, is <= s && e <= ie인 간선들을 모두 union find에 추가. * 2. M = (S+E)/2 일때, 1의 조건을 만족치 않은 간선들 중...     * 2.1 Solve(S, M, [S, M]과 lifetime이 겹치는 edge set)     * 2.2 Solve(M+1, E, [M+1, E]와 lifetime이 겹치는 edge set) * 3. Union find 자료구조를, 1번 과정이 실행되기 전으로 rollback
- * path compression은 사용하지 않는다대신 rank compression을 사용한다. P * 재귀 호출 내에 stack을 잡아서, 어떠한 변화를 줬는지를 기록해놓는다. * rollback 시에는 스택에서 pop해가면서 변화들을 원상복구해놓으면 된다.시간 복잡도는 O(Qlg^2Q)이다. 구현 시 edge set을 그때그때 들고 다니지 않고 segment tree 스타일로 미리 전역에 박고 시작하면 깔끔하게 코딩할 수 있다. 
-struct disj{
-	int pa[MAXN];
-	int rk[MAXN];
-	int cnt;
-	void init(int n){
-		iota(pa, pa + n + 1, 0);
-		cnt = n;
-	}
-	int find(int x){ return (pa[x] == x ? x : find(pa[x])); }
-	bool uni(int s, int e, vector<pi> &v){
-		s = find(s);
-		e = find(e);
-		if(s == e) return 0;
-		if(rk[s] < rk[e]){
-			pa[s] = e;
-			v.push_back({s, 1});
-		}
-		else{
-			pa[e] = s;
-			v.push_back({e, 1});	
-		}
-		if(rk[s] == rk[e]){
-			v.push_back({s, -1});
-			rk[s]++;
-		}
-		cnt--;
-		return 1;
-	}
-	int query(){ return cnt; }
-	void rvt(vector<pi> &v, int &c){
-		cnt = c;
-		while(!v.empty()){
-			auto x = v.back();
-			v.pop_back();
-			if(x.second == -1) rk[x.first]--;
-			else pa[x.first] = x.first;
-		}
-	}
-}disj;
-struct query{ int s, e, x, y; };
-int buf;
-pi qr[MAXN];
-void solve(int s, int e, vector<query> v){
-	if(s == e){
-		int k = disj.query();
-		vector<pi> rvt;
-		for(auto &i : v) disj.uni(i.x, i.y, rvt);
-        int i = s;
-		printf("%d\n", disj.find(qr[i].first) == disj.find(qr[i].second));
-		disj.rvt(rvt, k);
-		return;
-	}
-	int m = (s+e)/2;
-	int k = disj.query();
-	vector<query> l, r;
-	vector<pi> rvt;
-	for(auto &i : v){
-		if(i.s <= s && e <= i.e) disj.uni(i.x, i.y, rvt);
-		else{
-			if(i.s <= m) l.push_back(i);
-			if(m < i.e) r.push_back(i);
-		}
-	}
-	solve(s, m, l);
-	solve(m+1, e, r);
-	disj.rvt(rvt, k);
+
+const int B = 1 << 17;
+pair<int, int> E[B];    // query 저장
+vector<pair<int, int>> seg[B * 2]; // 각 쿼리 구간 [l, r]을 포함하는 간선
+int par[B], sz[B], ans[B];
+vector<int> st;
+
+int find(int x){return par[x] == -1 ? x : find(par[x]);}
+
+/*
+pair<int, int> find(int x) {    //  return : < root, color>
+    if (par[x] == -1) return {x, 0};
+    auto [p, c] = find(par[x]);
+    return pair(p, c ^ C[x]);
 }
-int main(){
-	int n, q, m = 0;map<pi, int> mp;vector<query> v;
-	scanf("%d %d",&n,&q);
-	disj.init(n);
-	for(int i=1; i<=q; i++){
-		int x, y;
-		scanf("%d", &buf);
-        buf += '0';
-        scanf("%d %d",&x,&y);
-        if(x > y) swap(x, y);
-		if(buf == '1'){
-			mp[pi(x, y)] = m;
-		}
-		else if(buf == '2'){
-			if(mp[pi(x, y)] <= m - 1) v.push_back({mp[pi(x, y)], m-1, x, y});
-			mp.erase(pi(x, y));
-		}
-		else{
-			qr[m++] = pi(x, y);
-		}
-	}
-	for(auto &i : mp) if(i.second<m) v.push_back({i.second, m-1, i.first.first, i.first.second});
-	if(m > 0){
-		solve(0, m-1, v);
-	}
+*/
+
+void init(int n){
+    for (int i = 1; i <= n; i++) par[i] = -1, sz[i] = 1;
 }
+
+void Union(int a, int b) {  // rank compression
+    a = find(a); b = find(b);
+    if (sz[a] < sz[b]) swap(a, b);
+    par[b] = a; sz[a] += sz[b];
+    st.emplace_back(b);
+}
+
+void Undo() {
+    int y = st.back(); st.pop_back();
+    sz[par[y]] -= sz[y];
+    par[y] = -1;
+}
+
+void upd(int ix, int nl, int nr, int l, int r, pair<int, int> v) {
+    if (nl > r || nr < l) return;
+    if (nl >= l && nr <= r) {
+        seg[ix].emplace_back(v);
+        return;
+    }
+    int m = (nl + nr) / 2;
+    upd(ix * 2, nl, m, l, r, v);
+    upd(ix * 2 + 1, m + 1, nr, l, r, v);
+}
+
+void dfs(int ix, int l, int r) {
+    int cnt = 0;
+    for (auto& [a, b] : seg[ix])
+        if (find(a) != find(b)) Union(a, b), cnt++;
+    if (l == r) {   // leaf node : answer query
+        auto&[a, b] = E[l];
+        if (a) ans[l] = find(a) == find(b);  // 하나의 component에 속하는지 확인
+    }
+    else {
+        int m = (l + r) / 2;
+        dfs(ix * 2, l, m);
+        dfs(ix * 2 + 1, m + 1, r);
+    }
+    while (cnt--) Undo();
+}
+
+map<pair<int, int>, int> S;  // a < b
+int n, m, op, a, b;
+
+// <main>
+// init(n);
+// 마지막까지 있는 간선 update
 
 \end{minted}
 \newpage
@@ -1681,6 +1831,17 @@ int dinic(int src, int sink) {
         }
     }
     return max_flow;}
+
+/*
+LR flow 구현 시
+1. edge (u, v) 용량이 [l, r] 이면, cap(u->T') = l, cap(S'->v) = l, cap(u->v) = r-l
+2. cap(T->S) 무한 용량 간선 추가
+3. S'->T' flow가 sum(l)이면 flow가 존재.
+4. (T->S) 간선(역간선 포함!) 지우고 S->T flow를 흘림
+5. 3과 4에서 흘린 flow의 합이 max-flow
+max flow는 
+*/
+
 \end{minted}
 \newpage
 \subsection {Hopcroft-Karp + Minimum Vertex Cover}
