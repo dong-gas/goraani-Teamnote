@@ -180,76 +180,41 @@ ll query(int node, int s, int e, int l, int r){
 \newpage
 \subsubsection {persistent segment tree}
 \begin{minted}{cpp}
-
-namespace pst {
-    struct node {
-        int v;
-        int l, r;
-    } nd[200 * MAXN]; // (N+Q)logN,, 문제에 따라 여유있게.
-    int root[MAXN], t = 0;
-
-    int new_node(int v) {
-        nd[++t] = {v, 0, 0};
-        return t;
+struct PST {
+    int l, r, v;
+    PST() : l(0), r(0), v(0) {}
+};
+PST tree[300030]; //enough size!
+int tn; //index of node
+void update(int prv, int now, int s, int e, int idx, int v) {
+    if(s==e) {
+        tree[now].v=tree[prv].v+v;
+        return;
     }
-
-    int init(int l, int r) {
-        int ix = new_node(0);
-        if (l == r) return ix;
-        int m = (l + r) / 2;
-        nd[ix].l = init(l, m);
-        nd[ix].r = init(m + 1, r);
-        return ix;
+    int mid=s+e>>1;
+    if(idx<=mid) {//update left
+        if(tree[now].l==0 || tree[now].l==tree[prv].l) tree[now].l=tn++;
+		//no leftson or same
+        
+        if(tree[now].r==0) tree[now].r=tree[prv].r;
+		//if rightson is empty, use original node
+        
+        update(tree[prv].l,tree[now].l,s,mid,idx,v);
     }
-
-    int upd(int prev, int l, int r, int i, int v) {
-        // 노드 번호 리턴함.
-        int ix = new_node(nd[prev].v + v);
-        if (l == r) return ix;
-        int m = (l + r) / 2;
-        if (i <= m) {
-            nd[ix].l = upd(nd[prev].l, l, m, i, v);
-            nd[ix].r = nd[prev].r;
-        }
-        else {
-            nd[ix].l = nd[prev].l;
-            nd[ix].r = upd(nd[prev].r, m + 1, r, i, v);
-        }
-        return ix;
+    else {
+        if(tree[now].r==0 || tree[now].r==tree[prv].r) tree[now].r=tn++;
+        if(tree[now].l==0) tree[now].l=tree[prv].l;
+        update(tree[prv].r,tree[now].r,mid+1,e,idx,v);
     }
-
-    int kth(int i1, int i2, int l, int r, int k) {
-        // k번째 작은 수
-        while (l ^ r) {
-            int cnt = nd[nd[i2].l].v - nd[nd[i1].l].v;
-            int m = (l + r) / 2;
-            if (k <= cnt) r = m, i1 = nd[i1].l, i2 = nd[i2].l;
-            else l = m + 1, k -= cnt, i1 = nd[i1].r, i2 = nd[i2].r;
-        }
-        return l;
-    }
-
-    int query(int ix, int nl, int nr, int l, int r) {
-        if (nl > r || nr < l) return 0;
-        if (nl >= l && nr <= r) return nd[ix].v;
-        int m = nl + nr >> 1;
-        return query(nd[ix].l, nl, m, l, r) + query(nd[ix].r, m + 1, nr, l, r);
-    }
+    tree[now].v=tree[tree[now].l].v+tree[tree[now].r].v;
 }
 
-/*
- *  pst::root[0] = pst::init(1, n); // 첫 세그트리 빈 거로 하나 만들어 두기
- *  다 닫힌 구간임.
- *
- *
- *  pst::root[i] = pst::upd(pst::root[i - 1], 1, n, a[i], 1); // 한 줄기 업데이트
- *  반드시 upd 결과를 대입해야 함!!
- *
- *  pst::kth(pst::root[l - 1], pst::root[r], 1, n, k) // [l, r]에 있는 수 중 k번째 작은 수
- *
- *  pst::query(pst::root[r], 1, n, l, r); // [l, r]중 답
- */
-
+int query(int node, int s, int e, int l, int r) {
+    if(l<=s && e<=r) return tree[node].v;
+    if(s>r || e<l) return 0;
+    int mid=s+e>>1;
+    return query(tree[node].l,s,mid,l,r) + query(tree[node].r,mid+1,e,l,r);
+}
 \end{minted}
 \newpage
 \subsubsection {Li-Chao Tree}
@@ -2167,6 +2132,38 @@ if sum of di is 2n-2 : can
 if sum of di isn't 2n-2 : cant
 repeat
     connect leaf with nonleaf
+\end{minted}
+
+\newpage
+\subsection{bitset}
+\begin{minted}{cpp}
+
+/*
+아래 pragma 추가하면 /64 -> /256
+근데, 로컬에선 잘 안 됨.. boj나 cf에선 잘 되는 듯.
+단, c++20이상에서는 avx2를 헤더파일들 밑에 두면 돈다.
+ex)
+#pragma GCC optimize("O3,unroll-loops")
+#include <bits/stdc++.h>
+#pragma GCC target("avx2")
+*/
+
+bitset<1010> b; 
+//default: 0
+
+/*
+reset(2) : 2번을 0으로 변경 생략 시 전체 비트 0
+set(2, 0 or 1) : 2번을 0 또는 1로 변경 생략 시 전체 비트 1
+flip(2) : 2번을 반전(0이면 1로, 1이면 0으로) 생략 시 전체 비트 반전
+all() : 비트셋에서 모든 비트가 1일 경우 true, 그렇지 않으면 false
+any() : 비트셋에 비트가 1인 것이 하나라도 존재한다면 true 그렇지 않으면 false
+none() : 비트셋에 비트가 1인 것이 하나라도 존재하지 않는다면 true 그렇지 않으면 false
+to_string() : 비트셋을 문자열로 변환한다.
+to_ulong() : 비트셋을 unsigned long integer 타입으로 변환한다.
+to_ullong() : 비트셋을 unsigned long long 타입으로 변환한다.
+size() : bitset의 size를 반환한다.
+count() : 현재 bitset의 있는 비트 1의 개수를 반환한다.
+*/
 \end{minted}
 \newpage
 \end{document}
