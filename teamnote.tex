@@ -12,6 +12,7 @@
 \usepackage{kotex}
 
 \usepackage[left=0.8cm, right=0.8cm, top=2cm, bottom=0.3cm, a4paper]{geometry}
+
 \usepackage{amsmath}
 \usepackage{ulem}
 \usepackage{amssymb}
@@ -84,7 +85,6 @@ template<typename T> struct seg {
 	}
 };
 \end{minted}
-\newpage
 \subsubsection {Lazy Propagation}
 \begin{minted}{cpp}
 class lazy_seg{
@@ -142,7 +142,6 @@ class lazy_seg{
 		ll mid = (s + e) / 2;
 		return f(N * 2, s, mid, l, r) + f(N * 2 + 1, mid + 1, e, l, r);}};
 \end{minted}
-\newpage
 \subsubsection {dynamic segment tree}
 \begin{minted}{cpp}
 struct Node{
@@ -177,7 +176,6 @@ ll query(int node, int s, int e, int l, int r){
     return query(nd[node].l, s, m, l, r) + query(nd[node].r, m+1, e, l, r);
 }
 \end{minted}
-\newpage
 \subsubsection {persistent segment tree}
 \begin{minted}{cpp}
 struct PST {
@@ -216,7 +214,7 @@ int query(int node, int s, int e, int l, int r) {
     return query(tree[node].l,s,mid,l,r) + query(tree[node].r,mid+1,e,l,r);
 }
 \end{minted}
-\newpage
+
 \subsubsection {Li-Chao Tree}
 \begin{minted}{cpp}
 const ll inf = 2e18;
@@ -266,7 +264,6 @@ struct Li_Chao{
 	}
 } seg;
 \end{minted}
-\newpage
 \subsection {pbds}
 \begin{minted}{cpp}
 #include <bits/extc++.h>
@@ -293,7 +290,6 @@ void m_erase(multiPBDS &OS, int val){
 count! number of less than x with order_of_key := p
 check! find_by_order(p) == x
 \end{minted}
-\newpage
 \subsection {Line Container}
 \begin{minted}{cpp}
 //max query.. if you want min query, use it with m -> -m, k -> -k, query(q) -> -query(q).
@@ -388,7 +384,6 @@ double area(vector<pt>& v){
 }
 
 \end{minted}
-\newpage
 \begin{minted}{cpp}
 
 // 선분 교차 판정
@@ -446,7 +441,6 @@ double linedist(pt a, pt b, pt c){
 
 
 \end{minted}
-\newpage
 \begin{minted}{cpp}
 // ConvexHull O(nlogn)
 vector<pt> hull(vector<pt> v){
@@ -504,7 +498,6 @@ int inside(pt p, vector<pt>& v){
     return ccw(v[l - 1], p, v[l]) < 0;
 }
 \end{minted}
-\newpage
 \begin{minted}{cpp}
 //gumgood's code
 ll ccw(pt a, pt b, pt c) {
@@ -598,7 +591,7 @@ vector<pd> half_plane(vector<line> v){
     return ret;
 }
 \end{minted}
-
+\newpage
 \section{Graph}
 \subsection {centroid}
 \begin{minted}{cpp}
@@ -648,7 +641,6 @@ int query(int u) {
     return (ret<1e9) ? ret : -1;
 }
 \end{minted}
-\newpage
 
 \subsection{Planer Graph}
 \begin{minted}{cpp}
@@ -721,7 +713,6 @@ void make_tree(int x) {
     return;
 }
 \end{minted}
-\newpage
 
 \subsection {Directed MST}
 \begin{minted}{cpp}
@@ -802,7 +793,6 @@ vector<int> DMST(int n, int r, const vector<edge> & E){
     return res;
 }
 \end{minted}
-\newpage
 
 \subsection {Eulerian Circuit}
 \begin{minted}{cpp}
@@ -843,7 +833,6 @@ void solve(){
 }
 
 \end{minted}
-\newpage
 
 \subsection {Offline Dynamic Connectivity}
 \begin{minted}{cpp}
@@ -916,7 +905,6 @@ int n, m, op, a, b;
 // 마지막까지 있는 간선 update
 
 \end{minted}
-\newpage
 \subsection {Articulation Point}
 \begin{minted}{cpp}
 //단절점
@@ -962,7 +950,6 @@ void solve(){
 }
 
 \end{minted}
-\newpage
 
 \subsection {Bridge}
 \begin{minted}{cpp}
@@ -1002,7 +989,6 @@ int main() {
 }
 
 \end{minted}
-\newpage
 \subsection {HLD}
 \begin{minted}{cpp}
 /*
@@ -1058,7 +1044,6 @@ struct Heavy_Light_Decomposition {
     }
 } hld;
 \end{minted}
-\newpage
 \subsection {SCC + 2-sat}
 \begin{minted}{cpp}
 //in 2-sat 
@@ -1126,7 +1111,6 @@ void solve() {
 	}    
 }
 \end{minted}
-\newpage
 \subsection {O(1) LCA with O(NlogN) preprocessing}
 \begin{minted}{cpp}
 const int NMAX = 100201;
@@ -1213,7 +1197,6 @@ vector<ll> convolution(vector<ll> a, vector<ll> b) {
     return a;
 }
 \end{minted}
-\newpage
 \subsection{CRT}
 \begin{minted}{cpp}
     //ax+by=1의 값을 x,y에 저장해준다. gcd(a,b)를 return 해준다.
@@ -1257,7 +1240,6 @@ void solve() {
 	cout << crt(A, B) << '\n';
 }
 \end{minted}
-\newpage
 \subsection{FFT}
 \begin{minted}{cpp}
 // if TLE, long double -> double (less precise...)
@@ -1303,7 +1285,6 @@ void multiply(const vector<ll>& a, const vector<ll >& b, vector<ll>& res)
 	for (int i = 0; i < n; i++) res[i] = ll(fa[i].real() + (fa[i].real() > 0 ? 0.5 : -0.5));
 }
 \end{minted}
-\newpage
 \subsection{NTT}
 \begin{minted}{cpp}
     ll pw(ll a, ll b, ll mod){
@@ -1377,7 +1358,6 @@ mod / w
 2013265921 31
 */
 \end{minted}
-\newpage
 \subsection{Extended Euclidean \& MOD Inverse}
 \begin{minted}{cpp}
 #define MOD 998244353
@@ -1403,7 +1383,6 @@ tll eeu(ll a, ll b) {
 auto [_, __, a_inv] = eeu(a, MOD);
 a_inv = (a_inv + MOD) % MOD;
 \end{minted}
-\newpage
 \subsection{Miller Rabin}
 \begin{minted}{cpp}
     //O(k(logN)^3)
@@ -1445,7 +1424,6 @@ bool isprime(int x){ //int range
 	return 1;
 }
 \end{minted}
-\newpage
 \subsection{Pollard rho}
 \begin{minted}{cpp}
 // **밀러 라빈에 있는 몇몇 코드 가져와야 할 수도 있음** //
@@ -1488,7 +1466,6 @@ vector<ll> factorize(ll n) {
 	return ret;
 }
 \end{minted}
-\newpage
 
 \subsection{Gauss mod}
 \begin{minted}{cpp}
@@ -1557,7 +1534,6 @@ void solve(){
 	cout<<'\n';
 }
 \end{minted}
-\newpage
 \subsection{Matrix Multiplication}
 \begin{minted}{cpp}
 
@@ -1686,7 +1662,6 @@ struct Hashing {
     }
 };
 \end{minted}
-\newpage
 \subsection{KMP}
 \begin{minted}{cpp}
 string s, t;
@@ -1734,7 +1709,7 @@ void solve() {
     }
 }
 \end{minted}
-\newpage
+
 \subsection{suffix array \& lcp}
 \begin{minted}{cpp}
 vector<ll> SA(string& s) { //O(nlogn)
@@ -1843,7 +1818,6 @@ max flow는
 */
 
 \end{minted}
-\newpage
 \subsection {Hopcroft-Karp + Minimum Vertex Cover}
 \begin{minted}{cpp}
 const int MAXN = 1010, MAXM = 1010;
@@ -1911,7 +1885,7 @@ vector<int> getcover(int n, int m){
 	return v;
 }
 \end{minted}
-\newpage
+
 \subsection {Minimum Cost Maximum Flow}
 \begin{minted}{cpp}
 const ll N = 222, INF = 1e9;
@@ -2033,7 +2007,6 @@ __int128 a=read();
 print(a);
 cout<<'\n';
 \end{minted}
-\newpage
 \subsection{prority queue my cmp}
 \begin{minted}{cpp}
 //ex) min heap
@@ -2062,7 +2035,6 @@ shuffle(all(v), rng); // shuffle randomly!
 cout<<rng();     //random [0, 2^32-1]
 int x=rng()%100; //[0,99]
 \end{minted}
-\newpage
 \subsection{mo's algorithm (hilbert)}
 \begin{minted}{cpp}
 // 정렬 기준을 HilOrd로..
@@ -2134,7 +2106,6 @@ int main(){
 
 
 \end{minted}
-\newpage
 \subsection{degree sequence}
 \begin{minted}{cpp}
 if satisfy 1 & 2 -> can make graph
@@ -2161,7 +2132,6 @@ repeat
     connect leaf with nonleaf
 \end{minted}
 
-\newpage
 \subsection{bitset}
 \begin{minted}{cpp}
 
