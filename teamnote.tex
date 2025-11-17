@@ -2065,7 +2065,9 @@ int x=rng()%100; //[0,99]
 \newpage
 \subsection{mo's algorithm (hilbert)}
 \begin{minted}{cpp}
-// 정렬 기준을 HilOrd로 해도 됨.
+// 정렬 기준을 HilOrd로..
+// 단, HilOrd로 하면 구간 넓히고 줄일 때, add/del 연산 순서가 중요하다.
+// add -> del 순서를 지켜주자.
 ll HilOrd(int x, int y, int k) {
     // long long 써야 함.
     // k는 n < 2^k인 첫 k로
