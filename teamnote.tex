@@ -2065,6 +2065,27 @@ int x=rng()%100; //[0,99]
 \newpage
 \subsection{mo's algorithm}
 \begin{minted}{cpp}
+// 정렬 기준을 HilOrd로 해도 됨.
+ll HilOrd(int x, int y, int k) {
+    // long long 써야 함.
+    // k는 n < 2^k인 첫 k로
+    // HilOrd 오름차순 기준으로 쿼리 처리
+    // O(QB + NN/B)라서 B = N/sqrt(Q)로 잡으면
+    // O(Nsqrt(Q)) 이고, Mo's의 (N+Q)sqrt(N)보다 항상 빠르다.
+    ll c, d = 0, p = 0, r = 0, v;
+    for (; k >= 0; k--) {
+        v = 0;
+        if (y - 1 >> k & 1)v = 3;
+        if (x - 1 >> k & 1)v ^= 1;
+        c = (v + r ^ d) % 4;
+        p += c << 2 * k;
+        if (c == d)r += 3;
+        if (c + d == 3)r++;
+        if (c == 0 || c == 3)d ^= 3;
+    }
+    return p + 1;
+}
+
 #include <bits/stdc++.h>
 using namespace std;
 typedef long long ll;
@@ -2098,6 +2119,7 @@ int main(){
 	}
 	ans[query[0].idx] = res;
 	for(int i=1; i<q; i++){
+        // 삽입, 삭제 순서 중요한 문제는 주의 필요.
 		while(s < query[i].s) res -= v[s++];
 		while(s > query[i].s) res += v[--s];
 		while(e < query[i].e) res += v[++e];
@@ -2106,6 +2128,9 @@ int main(){
 	}
 	for(int i=0; i<q; i++) cout << ans[i] << "\n";
 }
+
+
+
 \end{minted}
 \newpage
 \subsection{degree sequence}
