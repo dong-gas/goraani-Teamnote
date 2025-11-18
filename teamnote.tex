@@ -1024,55 +1024,66 @@ int main() {
 \end{minted}
 \subsection {HLD}
 \begin{minted}{cpp}
-/*
-you need read input on g (not inp)
-you need to call hld.init() after convert g -> inp 
-hld.update(u, val);
-hld.query(u, v);
-you don't need concern in[u] or in[v], because template do that
-*/
+// lazy seg 사용 코드. 기준이 노드인지 간선인지 확인 후 적절히 변형 필요.
 struct Heavy_Light_Decomposition {
-    ll sz[NMAX], dep[NMAX], papa[NMAX], top[NMAX], in[NMAX], out[NMAX], pv;
-    vector<ll> inp[NMAX], g[NMAX];
+    ll sz[MAXN], dep[MAXN], papa[MAXN], top[MAXN], in[MAXN], out[MAXN], pv;
+    vector<ll> inp[MAXN], g[MAXN];
     //inp: input graph(bidrectional), g: convert inp to one-way graph
     void init() {
-        dfs(1,0), dfs1(1), dfs2(1);
+        top[1] = 1;
+        dfs(1, 0), dfs1(1), dfs2(1);
     }
+
     void dfs(int u, int p) {
-        for(auto& v: inp[u]) if(v!=p) {
-            dfs(v,u);
-            g[u].emplace_back(v);
-        }
+        for (auto& v: inp[u])
+            if (v != p) {
+                dfs(v, u);
+                g[u].emplace_back(v);
+            }
     }
+
     void dfs1(int u) {
-        sz[u]=1;
-        for(auto &v: g[u]) {
-            dep[v]=dep[u]+1, papa[v]=u;
-            dfs1(v), sz[u]+=sz[v];
-            if(sz[v]>sz[g[u][0]]) swap(v, g[u][0]);
+        sz[u] = 1;
+        for (auto& v: g[u]) {
+            dep[v] = dep[u] + 1, papa[v] = u;
+            dfs1(v), sz[u] += sz[v];
+            if (sz[v] > sz[g[u][0]]) swap(v, g[u][0]);
         }
     }
+
     void dfs2(int u) {
-        in[u]=++pv;
-        for(auto v:g[u]) {
-            top[v]=(v==g[u][0])?top[u]:v;
+        in[u] = ++pv;
+        for (auto v: g[u]) {
+            top[v] = (v == g[u][0]) ? top[u] : v;
             dfs2(v);
         }
-        out[u]=pv;
+        out[u] = pv;
     }
-    void update(int u, int val) {
-        seg.update(in[u], val);                  
-    }
-    ll query(int u, int v) {
-        ll ret=0;
-        while(top[u] ^ top[v]) {
-            if(dep[top[u]]<dep[top[v]]) swap(u,v);
-            int st=top[u];
-            ret+=seg.query(in[st], in[u]);     
-            u=papa[st];
+
+
+    void update(int u, int v, int val) {
+        while (top[u] ^ top[v]) {
+            if (dep[top[u]] < dep[top[v]]) swap(u, v);
+            int st = top[u];
+            seg.update(1, 1, n, in[st], in[u], val);
+            u = papa[st];
         }
-        if(dep[u]>dep[v]) swap(u,v);
-        ret+=seg.query(in[u], in[v]);            
+        // if (u == v) return; // 간선 기준일 때는 여기서 return 필요
+        if (dep[u] > dep[v]) swap(u, v);
+        seg.update(1, 1, n, in[u] + 1, in[v], val); // 노드 기준이면 in[u]로 해야 함.
+    }
+
+    ll query(int u, int v) {
+        ll ret = 1e18;
+        while (top[u] ^ top[v]) {
+            if (dep[top[u]] < dep[top[v]]) swap(u, v);
+            int st = top[u];
+            ret = min(ret, seg.query(1, 1, n, in[st], in[u]));
+            u = papa[st];
+        }
+        // if (u == v) return ret; // 간선 기준일땐 u == v면 반영 안 해야 함.
+        if (dep[u] > dep[v]) swap(u, v);
+        ret = min(ret, seg.query(1, 1, n, in[u] + 1, in[v])); // 노드 기준이면 in[u]로 해야 함.
         return ret;
     }
 } hld;
