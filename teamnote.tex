@@ -1695,6 +1695,97 @@ struct Hashing {
     }
 };
 \end{minted}
+\subsection{Z}
+\begin{minted}{cpp}
+// z[i] -> suffix[i] 와 전체 문자열의 최장 공통 접두사
+vector<int> make_z(string& s) {
+    ll n = s.size();
+    vector<int> z(n);
+    for (int i = 1, l = 0, r = 0; i < n; i++) {
+        if (i <= r) z[i] = min(r - i + 1, z[i - l]);
+        while (i + z[i] < n && s[z[i]] == s[i + z[i]]) z[i]++;
+        if (i + z[i] - 1 > r) l = i, r = i + z[i] - 1;
+    }
+    z[0] = n;
+    return z;
+}
+\end{minted}
+
+\subsection{Aho}
+\begin{minted}{cpp}
+
+const int nmax = 1e4 + 1;
+class aho {
+   public:
+    // 최대 단어개수?
+    int fail[nmax], fin[nmax], num = 1;
+    char last[nmax];
+    vector<pair<char, int>> edge[nmax];  // edge[x]={c,y}->c를 만나면 y로 이동
+    int in(int node, char go) {
+        for (auto nxt : edge[node]) {
+            if (nxt.first == go) return nxt.second;
+        }
+        return -1;
+    }
+    void add(string S) {
+        ll now = 0;
+        for (auto nxt : S) {
+            ll go = in(now, nxt);
+            if (go == -1) {
+                last[num] = nxt;
+                edge[now].push_back({nxt, num});
+                now = num++;
+            }
+            else now = go;
+        }
+        fin[now] = 1;
+    }
+    aho(vector<string> S) {
+        for (int i = 0; i < nmax; i++) fail[i] = fin[i] = last[i] = 0;
+        for (auto nxt : S) add(nxt);
+        queue<int> q;
+        q.push(0);
+        while (q.size()) {
+            auto cur = q.front();
+            q.pop();
+            for (auto [a, nxt] : edge[cur]) {
+                ll f = fail[cur];
+                while (f && in(f, a) == -1) f = fail[f];
+                if (in(f, a) != -1) f = in(f, a);
+                if (!cur) f = 0;
+                fin[nxt] |= fin[f];
+                fail[nxt] = f;
+                q.push(nxt);
+            }
+        }
+    }
+    int match(string s) {
+        int now = 0;
+        for (auto nxt : s) {
+            while (now > 0 && in(now, nxt) == -1) now = fail[now];
+            if (in(now, nxt) != -1) now = in(now, nxt);
+            if (fin[now]) return 1;
+        }
+        return 0;
+    }
+};
+void solve() {
+    ll n;
+    cin >> n;
+    vector<string> S(n);
+    for (int i = 0; i < n; i++) cin >> S[i];
+    aho A(S);
+    cin >> n;
+    for (int i = 0; i < n; i++) {
+        string s;
+        cin >> s;
+        if (A.match(s)) cout << "YES";
+        else cout << "NO";
+        cout << '\n';
+    }
+}
+
+\end{minted}
 \subsection{KMP}
 \begin{minted}{cpp}
 string s, t;
