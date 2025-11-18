@@ -2137,7 +2137,7 @@ int main(){
 	}
 	ans[query[0].idx] = res;
 	for(int i=1; i<q; i++){
-        // 삽입, 삭제 순서 중요한 문제는 주의 필요.
+        // 삽입, 삭제 순서 중요한 문제는 주의 필요. (런타임에러)
 		while(s < query[i].s) res -= v[s++];
 		while(s > query[i].s) res += v[--s];
 		while(e < query[i].e) res += v[++e];
