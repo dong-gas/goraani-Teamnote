@@ -250,52 +250,59 @@ namespace pst {
 
 \subsubsection {Li-Chao Tree}
 \begin{minted}{cpp}
-const ll inf = 2e18;
-struct Line{
-	ll a, b;
-	ll get(ll x){ return a * x + b; }
+// 최댓값 기준
+const ll inf = 1e18;
+struct line{
+    ll a, b;
+    ll get(ll x){return a * x + b;}
 };
-struct Node{
-	int l, r; //child
-	ll s, e; //range
-	Line line;
+struct CHT {
+    // x 범위 : [S, E]
+    const ll S = -1e9;
+    const ll E = 1e9;
+    struct node{
+        ll lc, rc, l, r;
+        line ln;
+    };
+    vector<node> Tree;
+    int t;  // Tree 노드 개수
+
+    CHT(){Tree.push_back(node(-1, -1, S, E, {0, -inf})); }
+    void upd(int ix, line hi){
+        ll l = Tree[ix].l, r = Tree[ix].r;
+        ll m = (l + r) >> 1;
+
+        line lw = Tree[ix].ln;
+        if(lw.get(l) > hi.get(l)) swap(lw, hi);
+        if(hi.get(r) >= lw.get(r)) {
+            Tree[ix].ln = hi; return;
+        }
+
+        if(hi.get(m) >= lw.get(m)){
+            Tree[ix].ln = hi;
+            if(Tree[ix].rc == -1) {
+                Tree[ix].rc = ++t;
+                Tree.push_back({-1, -1, m + 1, r, {0, -inf}});  // to modify : 더미 선분
+            }
+            upd(Tree[ix].rc, lw);
+        }
+        else{
+            Tree[ix].ln = lw;
+            if(Tree[ix].lc == -1){
+                Tree[ix].lc = ++t;
+                Tree.push_back({-1, -1, l, m, {0, -inf}});   // to modify : 더미 선분
+            }
+            upd(Tree[ix].lc, hi);
+        }
+    }
+    ll qry(int ix, ll x){
+        if(ix == -1) return -inf;
+        ll m = (Tree[ix].l + Tree[ix].r) >> 1;
+        if(x <= m) return max(Tree[ix].ln.get(x), qry(Tree[ix].lc, x));
+        else return max(Tree[ix].ln.get(x), qry(Tree[ix].rc, x));
+    }
+
 };
-struct Li_Chao{
-	vector<Node> tree;
-	void init(ll s, ll e){ tree.push_back({ -1, -1, s, e, { 0, -inf } }); }
-	void update(int node, Line v){
-		ll s = tree[node].s, e = tree[node].e;
-		ll m = s + e >> 1;
-		Line low = tree[node].line, high = v;
-		if (low.get(s) > high.get(s)) swap(low, high);
-		if (low.get(e) <= high.get(e)){
-			tree[node].line = high; return;
-		}
-		if (low.get(m) < high.get(m)){
-			tree[node].line = high;
-			if (tree[node].r == -1){
-				tree[node].r = tree.size();
-				tree.push_back({ -1, -1, m + 1, e, { 0, -inf } });
-			}
-			update(tree[node].r, low);
-		}
-		else{
-			tree[node].line = low;
-			if (tree[node].l == -1){
-				tree[node].l = tree.size();
-				tree.push_back({ -1, -1, s, m, { 0, -inf } });
-			}
-			update(tree[node].l, high);
-		}
-	}
-	ll query(int node, ll x){
-		if (node == -1) return -inf;
-		ll s = tree[node].s, e = tree[node].e;
-		ll m = s + e >> 1;
-		if (x <= m) return max(tree[node].line.get(x), query(tree[node].l, x));
-		else return max(tree[node].line.get(x), query(tree[node].r, x));
-	}
-} seg;
 \end{minted}
 \subsection {pbds}
 \begin{minted}{cpp}
