@@ -1294,6 +1294,27 @@ void solve() {
 \subsection{FFT}
 \begin{minted}{cpp}
 // if TLE, long double -> double (less precise...)
+//생성함수 유명한 등식
+// ── Formal power series 기본(수렴 가정 불필요; 해석적 의미로는 |x|<1) ──
+// [기하급수 Geometric series]
+/*
+1/(1 - x) = Σ_{n≥0} x^n
+1/(1 - a x) = Σ_{n≥0} a^n x^n
+(1 - x)^{-m} = Σ_{n≥0} C(n+m-1, m-1) x^n
+[x^n] (1 - a x)^{-m} = a^n * C(n+m-1, m-1)
+(1 - x^L)/(1 - x) = 1 + x + ... + x^{L-1}
+*/
+
+// [로그/지수 Log/Exp]
+/*
+-log(1 - x) = Σ_{n≥1} x^n / n
+log(1/(1 - x)) = Σ_{n≥1} x^n / n            // 같은 식
+-log(1 - x^k) = Σ_{r≥1} x^{kr} / r          // t = x^k 치환
+exp(x) = Σ_{n≥0} x^n / n!
+exp(ax) = Σ_{n≥0} a^n x^n / n!
+log(1 + U) = Σ_{m≥1} (-1)^{m+1} U^m / m     // 상수항(U(0)) = 0일 때 형식적 정의
+*/
+
 #define double long double 
 typedef complex<double> base;
 void fft(vector <base>& a, bool invert)
@@ -1408,6 +1429,79 @@ mod / w
 1'092'616'193 3
 2013265921 31
 */
+\end{minted}
+\subsection{Online FFT}
+\begin{minted}{cpp}
+int n;
+vector<ll> A,F,G;
+ll Psum = 0;     // prefix sum of G: Psum = sum_{k=0}^l G[k]
+
+NTT<MOD, 3> ntt;
+
+// CDQ on [l, r)
+void DnC(int l, int r) {
+    if (l + 1 == r) {
+        ll add = F[l] * F[0] % MOD;
+        if (l) add = (add + F[0] * F[l]) % MOD;
+        G[l] = (G[l] + add) % MOD;
+        Psum = (Psum + G[l]) % MOD;
+        F[l + 1] = A[l + 1] * Psum % MOD;
+        return;
+    }
+
+    int m = (l + r) >> 1;
+
+    DnC(l, m);
+    {
+        int fLen = m - l;
+        int gLen = min(m, r - l);
+            vector<ll> f(fLen), g(gLen);
+            for (int i = 0; i < fLen; i++) f[i] = F[l + i];
+            for (int i = 0; i < gLen; i++) g[i] = F[i];
+            vector<ll> h = ntt.multiply(f, g);
+            int startT = m - l;
+            int endT = r - l - 1;
+            startT = max(startT, 0);
+            endT = min(endT, (int)h.size() - 1);
+            for (int t = startT; t <= endT; t++) {
+                int k = l + t;
+                G[k] = (G[k] + h[t]) % MOD;
+            }
+    }
+    {
+        int fLen = m - l;
+        int gLen = min(l, r - l);
+            vector<ll> f(fLen), g(gLen);
+            for (int i = 0; i < fLen; i++) f[i] = F[l + i];
+            for (int i = 0; i < gLen; i++) g[i] = F[i];
+            vector<ll> h = ntt.multiply(f, g);
+            int startT = m - l;
+            int endT = r - l - 1;
+            startT = max(startT, 0);
+            endT = min(endT, (int)h.size() - 1);
+            for (int t = startT; t <= endT; t++) {
+                int k = l + t;
+                G[k] = (G[k] + h[t]) % MOD;
+            }
+    }
+    DnC(m, r);
+}
+
+void solve() {
+    cin >> n;
+    A.assign(n + 1, 0);
+    for (int i = 1; i <= n; i++) cin >> A[i];
+
+    F.assign(n + 1, 0);
+    G.assign(n + 1, 0);
+    F[0] = 1;
+    Psum = 0;
+
+    DnC(0, n);
+
+    for (int i = 1; i <= n; i++)cout<<F[i]<<' ';
+
+}
 \end{minted}
 \subsection{Extended Euclidean \& MOD Inverse}
 \begin{minted}{cpp}
